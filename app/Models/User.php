@@ -23,6 +23,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'dob',
+        'phone',
+        'address',
+        'avatar',
+        'verify_by_admin',
     ];
 
     /**
@@ -52,7 +57,10 @@ class User extends Authenticatable
     public function getRoleNameAttribute()
     {
         if (!empty($this->roles)) {
+            if(@$this->roles[0])
             return $this->roles[0]->display_name;
+            else
+            return 'No Role';
         } else {
             return "No Role" ;
         }

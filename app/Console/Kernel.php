@@ -4,6 +4,8 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Jobs\SendGoodMorningEmail;
+use App\Jobs\SendBirthdayEmail;
 
 class Kernel extends ConsoleKernel
 {
@@ -16,6 +18,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+        $schedule->job(new SendGoodMorningEmail)->dailyAt('08:00');
+        $schedule->job(new SendBirthdayEmail)->dailyAt('08:00');
     }
 
     /**

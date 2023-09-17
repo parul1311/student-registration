@@ -45,8 +45,7 @@
                                         <select name="role" class="form-control" id="role" @if($user->id) disabled @else required @endif>
                                             <option value="">Select Role</option>
                                             @foreach ($roles as $role)
-                                                <option value="{{ $role->name }}"@if(old('role')) {{ old('role') == $role->name ? 'selected' : '' }} @else  @isset($user->roles) {{ in_array($role->id,$user->roles()->pluck('id')->toArray()) ? 'selected' : '' }} @endif>
-                                                    {{ $role->display_name }} @endisset>{{ $role->display_name }}</option>
+                                                <option value="{{ $role->name }}"@if(old('role')) {{ old('role') == $role->name ? 'selected' : '' }} @else  @isset($user->roles) {{ in_array($role->id,$user->roles()->pluck('id')->toArray()) ? 'selected' : '' }} @endisset @endif>{{ $role->display_name }}</option>
                                             @endforeach
                                         </select>
                                     </div>

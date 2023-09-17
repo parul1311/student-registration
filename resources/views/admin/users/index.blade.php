@@ -1,5 +1,9 @@
 @extends('layouts.app')
 @section('title','Users')
+@php
+    use Carbon\Carbon;
+    $carbonObj = new Carbon();
+@endphp
 @section('content')
 <div class="container">
     <div class="card m-3">
@@ -9,6 +13,10 @@
             <span>List of users</span>
             </div>
             <div class="text-right">
+                <a href="{{ route('admin.users.export') }}" class="btn btn-success btn-sm">Export Students</a>
+                <button type="button" class="btn btn-sm btn-info" data-toggle="modal" data-target="#importModal">
+                    Import Students
+                </button>
                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">Add New</a>
             </div>
         </div>
@@ -35,7 +43,7 @@
                                 <td><img src="{{ $user->avatar }}" class="img-fluid avatar" alt=""></td>
                                     <td>{{ ucwords($user->name) }}</td>
                                     <td>{{ $user->email }}</td>
-                                    <td>{{ $user->dob??"N/A" }}</td>
+                                    <td>{{ $user->dob? $carbonObj->parse($user->dob)->format('jS M, Y') : "N/A" }}</td>
                                     <td>{{ $user->role_name }}</td>
                                     <td>{{ $user->created_at->format('jS M Y') }}</td>
                                     <td>
@@ -81,6 +89,31 @@
                     {{ $users->links() }}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Students from Excel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="excelFile">Choose Excel File</label>
+                        <input type="file" name="file" class="form-control-file" id="excelFile" accept=".xlsx,.xls">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

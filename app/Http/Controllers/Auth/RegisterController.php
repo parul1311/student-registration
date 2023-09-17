@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Notification;
+use App\Mail\UserRegistered;
+use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends Controller
 {
@@ -51,6 +54,9 @@ class RegisterController extends Controller
     {
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
+            'dob' => ['required', 'date'],
+            'image' => ['required', 'image','mimes:jpeg,png,jpg,gif','max:2048'],
+            'address' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
@@ -64,10 +70,31 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+        
+            // Upload and store the profile image
+        $profileImageName = null;
+        if ($data['image']) {
+            $profileImageName = $data['image']->store('public/students');
+            // Get only the file name, without the path
+            $profileImageName = basename($profileImageName);
+        }
+        $user =  User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'dob' => $data['dob'],
+            'address' => $data['address'],
             'password' => Hash::make($data['password']),
         ]);
+        $user->avatar = $profileImageName;
+        $user->save();
+        $user->attachRole('student');
+        try{
+        
+            Mail::to($user->email)->send(new UserRegistered($user));
+            Mail::to(env('ADMIN_MAIL'))->send(new UserRegistered($user,'admin'));
+        }catch(Exception $e){
+
+        }
+        return $user;
     }
 }

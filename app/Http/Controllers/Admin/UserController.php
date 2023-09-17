@@ -6,8 +6,13 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
+use App\Exports\UserExport;
+use App\Imports\UserImport;
 use Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\UserRegistered;
+use App\Mail\UserVerification;
+use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
@@ -74,42 +79,49 @@ class UserController extends Controller
         }
 
         $this->validate($request,$fields);
-        if($request->id > 0){
-           $user =  User::find($request->id);
-           $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'dob' => $request->dob,
-            'address' => $request->address,
-           ]);
-           if($request->get('password'))
-           $user->update(['password' => Hash::make($request->password)]);
+        try{
 
-        }else{
-            $user = User::create([
+            if($request->id > 0){
+               $user =  User::find($request->id);
+               $user->update([
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'dob' => $request->dob,
                 'address' => $request->address,
-                'password' => Hash::make($request->password),
-            ]);
-            if($request->role)
-                $user->attachRole($request->role);
-        }
-        if ($request->hasFile('image')) {
-            // Delete the old profile image if it exists
-            if ($user->avatar) {
-                Storage::delete('public/students/' . $user->avatar);
+               ]);
+               if($request->get('password'))
+               $user->update(['password' => Hash::make($request->password)]);
+    
+               if($request->role != 'admin')
+                Mail::to($user->email)->send(new UserRegistered($user));
+            }else{
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'dob' => $request->dob,
+                    'address' => $request->address,
+                    'password' => Hash::make($request->password),
+                ]);
+                if($request->role)
+                    $user->attachRole($request->role);
             }
-
-            // Store the new profile image in the "students" folder
-            $profileImage = $request->file('image')->store('public/students');
-            $user->avatar = str_replace('public/students/', '', $profileImage);
-            $user->save();
+            if ($request->hasFile('image')) {
+                // Delete the old profile image if it exists
+                if ($user->avatar) {
+                    Storage::delete('public/students/' . $user->avatar);
+                }
+    
+                // Store the new profile image in the "students" folder
+                $profileImage = $request->file('image')->store('public/students');
+                $user->avatar = str_replace('public/students/', '', $profileImage);
+                $user->save();
+            }
+            return redirect(route('admin.users.index').'?role='.$user->role_name)->with('success','User saved successfully!');
+        }catch(Exception $e){
+            return redirect()->back()->with('error',$e->getMessage());
         }
-        return redirect()->route('admin.users.index')->with('success','User saved successfully!');
     }
 
     /**
@@ -119,9 +131,20 @@ class UserController extends Controller
      * 
      * @return \Illuminate\Http\Response
      */
-    public function show()
+    public function import(Request $request)
     {
-        
+        $request->validate([
+            'file' => 'required|mimes:csv,xls,xlsx',
+        ]);
+    
+        $file = $request->file('file');
+        \Excel::import(new UserImport, $file);
+    
+        return redirect()->back()->with('success', 'Users imported successfully.');
+    }
+    public function export()
+    {
+        return \Excel::download(new UserExport, 'users.xlsx');
     }
 
     /**
@@ -138,10 +161,18 @@ class UserController extends Controller
 
     public function verify(Request $request,User $user)
     {
-        if($request->verify != 1)
-        $request['verify'] = 0;
-        $user->update(['verify_by_admin'=>$request->verify]);
-        return back()->with(['success' => 'User verification updated!']);
+        try{
+            $oldValue = $user->verify_by_admin;
+            if($request->verify != 1)
+            $request['verify'] = 0;
+            $user->verify_by_admin = $request->verify;
+            $user->save();
+            if(!$oldValue && $user->verify_by_admin)
+            Mail::to($user->email)->send(new UserVerification($user));
+            return back()->with(['success' => 'User verification updated!']);
+        }catch(Exception $e){
+            return redirect()->back()->with('error',$e->getMessage());
+        }
     }
     /**
      * Update the specified resource in storage.

@@ -26,6 +26,8 @@ Route::group(['prefix' => '/admin','as'=>'admin.','middleware'=>['auth','admin']
     Route::get('/',[App\Http\Controllers\Admin\AccountController::class, 'dashboard'])->name('dashboard');
     Route::group(['namespace' => "App\Http\Controllers\Admin"], function () {
         Route::resource('users', UserController::class);
-        Route::get('/users/verify/{user}',[App\Http\Controllers\Admin\UserController::class, 'verify'])->name('users.verify');
+        Route::get('/users/verify/{user}','UserController@verify')->name('users.verify');
+        Route::post('/import-users', 'UserController@import')->name('users.import');
+        Route::get('/export-users', 'UserController@export')->name('users.export');
     });
 });
