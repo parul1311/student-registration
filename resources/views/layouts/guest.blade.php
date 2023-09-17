@@ -8,21 +8,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title',config('app.name'))</title>
-    {{-- <title>{{ config('app.name', 'Laravel') }}</title> --}}
     @include('layouts.head')
 </head>
 <body>
     <div id="app">
         @include('layouts.header')
-        @include('layouts.sidebar')
         <main class="py-4 main-frame">
-            @include('layouts.message')
                 @yield('content')
         </main>
         @include('layouts.footer')
         
     </div>
     @include('layouts.script')
-    
 </body>
 </html>

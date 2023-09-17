@@ -19,4 +19,13 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::post('/logout', [App\Http\Controllers\HomeController::class, 'logout'])->name('logout');
+
+Route::group(['prefix' => '/admin','as'=>'admin.','middleware'=>['auth','admin']], function () {
+    Route::get('/',[App\Http\Controllers\Admin\AccountController::class, 'dashboard'])->name('dashboard');
+    Route::group(['namespace' => "App\Http\Controllers\Admin"], function () {
+        Route::resource('users', UserController::class);
+        Route::get('/users/verify/{user}',[App\Http\Controllers\Admin\UserController::class, 'verify'])->name('users.verify');
+    });
+});

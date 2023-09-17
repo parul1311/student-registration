@@ -8,12 +8,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Laratrust\Traits\LaratrustUserTrait;
-use Laratrust\Contracts\LaratrustUser;
-use Laratrust\Traits\HasRolesAndPermissions;
 
-class User extends Authenticatable implements LaratrustUser
+class User extends Authenticatable
 {
-    use LaratrustUserTrait,HasRolesAndPermissions;
+    use LaratrustUserTrait;
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
@@ -45,4 +43,18 @@ class User extends Authenticatable implements LaratrustUser
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function getAvatarAttribute($value)
+    {
+        $avatar = !empty($value) ? asset('storage/students/'.$value) : 'https://ui-avatars.com/api/?name='.$this->name.'&background=19B5FE&color=ffffff&v=19B5FE';
+        return $avatar;
+    }
+    public function getRoleNameAttribute()
+    {
+        if (!empty($this->roles)) {
+            return $this->roles[0]->display_name;
+        } else {
+            return "No Role" ;
+        }
+    }
 }
